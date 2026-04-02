@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AuraFX Fixed Time (Olymp Style)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        /* TEMA OLYMP TRADE DARK MODE */
+        :root {
+            --bg-main: #0a0b0d;
+            --bg-panel: #18191d;
+            --bg-input: #23252a;
+            --text-white: #ffffff;
+            --text-gray: #8a8d93;
+            --ot-green: #00e676;
+            --ot-red: #ff4b55;
+            --ot-wallet: #00fa9a;
+            --ot-blue: #2196f3;
+            --border-dim: rgba(255, 255, 255, 0.05);
+            --radius-md: 12px;
+            --radius-round: 50%;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #000; display: flex; justify-content: center; height: 100vh; overflow: hidden; color: var(--text-white); }
+        .app-container { width: 100%; max-width: 480px; height: 100%; background-color: var(--bg-main); display: flex; flex-direction: column; position: relative; overflow: hidden;}
+
+        /* ========================================================
+           WELCOME / LOGIN SCREEN OVERLAY
+           ======================================================== */
+        .welcome-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: space-between;
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+        .welcome-container.hidden {
+            opacity: 0; visibility: hidden; transform: scale(1.05); pointer-events: none;
+        }
+        .logo-container { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 40vh; animation: fadeInDown 1s ease-out; }
+        .logo-icon { font-size: 140px; color: rgba(255, 255, 255, 0.9); text-shadow: 0px 10px 40px rgba(255, 255, 255, 0.15); background: -webkit-linear-gradient(top, #ffffff, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .text-section { text-align: center; padding: 0 24px; margin-bottom: 40px; animation: fadeInUp 1s ease-out 0.2s both; }
+        .welcome-heading { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; letter-spacing: 0.5px; }
+        .welcome-subheading { font-size: 15px; color: #cccccc; line-height: 1.5; padding: 0 10px; }
+        .action-section { width: 100%; padding: 0 24px 40px; display: flex; flex-direction: column; align-items: center; gap: 24px; animation: fadeInUp 1s ease-out 0.4s both; }
+        .btn-mulai { width: 100%; background-color: var(--ot-green); color: #000000; font-size: 16px; font-weight: 700; padding: 18px; border-radius: 12px; border: none; cursor: pointer; transition: transform 0.1s, opacity 0.2s; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.2); }
+        .btn-mulai:active { transform: scale(0.98); opacity: 0.8; }
+        .login-link { font-size: 14px; color: var(--text-gray); }
+        .login-link span { color: var(--ot-green); font-weight: 700; cursor: pointer; margin-left: 4px; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- HEADER --- */
+        .header-ot { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-main); z-index: 10; flex-shrink: 0;}
+        .profile-btn { width: 36px; height: 36px; border-radius: var(--radius-round); background: var(--bg-input); border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; position: relative; color: var(--text-gray); font-size: 18px; cursor: pointer; }
+        .profile-status { position: absolute; bottom: 0; left: 0; width: 12px; height: 12px; background: var(--ot-blue); border-radius: 50%; border: 2px solid var(--bg-main); display: flex; justify-content: center; align-items: center; }
+        .profile-status i { font-size: 8px; color: white; }
+        
+        .account-center { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 0 10px;}
+        .acc-balance { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        .acc-type { font-size: 12px; color: var(--text-gray); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        
+        .wallet-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--ot-wallet); color: black; display: flex; justify-content: center; align-items: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0, 250, 154, 0.2); cursor: pointer;}
+
+        /* --- ASSET TOOLBAR --- */
+        .asset-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--bg-main); border-bottom: 1px solid var(--border-dim); z-index: 10; flex-shrink: 0;}
+        .asset-selector { display: flex; align-items: center; gap: 10px; background: transparent; color: white; font-size: 15px; font-weight: 500; cursor: pointer;}
+        .asset-icon { width: 24px; height: 24px; background: linear-gradient(135deg, #fbc02d, #f57c00); border-radius: 4px; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; color: white; font-weight: bold; font-size: 12px;}
+        .asset-icon-line::after { content: ''; position: absolute; width: 150%; height: 8px; background: #e53935; transform: rotate(-45deg); }
+        .chart-tools { display: flex; gap: 16px; color: var(--text-white); font-size: 18px; align-items: center; }
+        
+        .tf-badge { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px; border: 1px solid var(--text-gray); padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s;}
+        .tf-badge:active { background: var(--bg-input); }
+
+        /* --- CUSTOM CHART AREA --- */
+        .chart-container { flex: 1; position: relative; background: var(--bg-main); display: flex; overflow: hidden; touch-action: none; }
+        .sentiment-bar { width: 4px; height: 75%; position: absolute; left: 16px; top: 12%; z-index: 5; display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; }
+        .sent-red { flex: 0.48; background: var(--ot-red); position: relative; }
+        .sent-green { flex: 0.52; background: var(--ot-green); position: relative; }
+        .sent-label-red { position: absolute; top: -16px; left: -6px; color: var(--ot-red); font-size: 10px; font-weight: 700; }
+        .sent-label-green { position: absolute; bottom: -16px; left: -6px; color: var(--ot-green); font-size: 10px; font-weight: 700; }
+
+        #chartCanvas { position: absolute; top: 0; left: 30px; right: 0; bottom: 0; width: calc(100% - 30px); height: 100%; z-index: 1; }
+
+        /* ACTIVE TRADES OVERLAY */
+        #active-trades-layer { position: absolute; top: 0; left: 30px; right: 0; height: 100%; pointer-events: none; z-index: 5; }
+        .trade-marker { position: absolute; left: 0; display: flex; align-items: center; pointer-events: auto; transform: translateY(-50%); width: 100%; }
+        .tm-line { width: 100%; height: 0; border-top: 1.5px dashed; position: absolute; left: 0; z-index: 1;}
+        .tm-line.buy { border-color: var(--ot-green); }
+        .tm-line.sell { border-color: var(--ot-red); }
+        .tm-badge { background: rgba(24, 25, 29, 0.9); border: 1px solid var(--border-dim); padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 11px; z-index: 2; margin-left: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+        .tm-badge.buy { border-left: 3px solid var(--ot-green); }
+        .tm-badge.sell { border-left: 3px solid var(--ot-red); }
+        .tm-close { background: var(--ot-red); color: white; border: none; border-radius: 4px; padding: 3px 8px; font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .tm-close:active { transform: scale(0.9); }
+
+        /* TRACKER HARGA DAN TIMER MUNDUR */
+        .current-price-tracker { position: absolute; right: 0; top: 0; width: auto; z-index: 10; pointer-events: none; display: flex; justify-content: flex-end; align-items: center; transform: translateY(-50%); }
+        .cpt-timer { 
+            position: absolute; 
+            bottom: 100%; 
+            right: 8px; 
+            margin-bottom: 4px; 
+            background: transparent; 
+            color: var(--text-white); 
+            font-size: 11px; 
+            padding: 3px 6px; 
+            border-radius: 4px; 
+            border: 1px solid rgba(255,255,255,0.4); 
+            font-family: monospace; 
+            text-shadow: 0px 1px 3px rgba(0,0,0,0.9); 
+        }
+        .cpt-badge { background: var(--ot-green); color: black; font-size: 11px; font-weight: 700; padding: 4px 6px; border-radius: 4px; font-family: monospace; margin-right: 8px; transition: background 0.2s; position: relative;}
+
+        /* --- BOTTOM TRADE PANEL --- */
+        .trade-panel { padding: 12px 16px 20px; background: var(--bg-main); border-top: 1px solid var(--border-dim); display: flex; flex-direction: column; gap: 12px; z-index: 10; flex-shrink: 0;}
+        .trade-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-gray); font-weight: 500; }
+        .stepper-row { display: flex; gap: 12px; }
+        .stepper { flex: 1; background: var(--bg-input); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; padding: 4px; }
+        .stepper-btn { width: 36px; height: 36px; background: transparent; border: none; color: var(--text-gray); font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .stepper-input { flex: 1; background: transparent; border: none; color: white; text-align: center; font-size: 16px; font-weight: 500; outline: none; width: 100%; }
+        .action-row { display: flex; gap: 10px; align-items: stretch; height: 52px; }
+        .btn-trade { flex: 1; border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; cursor: pointer; transition: opacity 0.1s; }
+        .btn-trade:active { opacity: 0.7; }
+        .btn-jual { background: var(--ot-red); }
+        .btn-beli { background: var(--ot-green); }
+        .btn-clock { width: 52px; background: var(--bg-input); border: none; border-radius: 12px; color: white; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+
+        /* --- BOTTOM NAVIGATION --- */
+        .bottom-nav { width: 100%; height: 60px; min-height: 60px; flex-shrink: 0; background: var(--bg-main); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border-dim); padding-bottom: 5px; z-index: 10;}
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-gray); font-size: 10px; font-weight: 500; cursor: pointer; transition: color 0.2s; }
+        .nav-item i { font-size: 20px; }
+        .nav-item.active { color: var(--text-white); }
+
+        .content-wrap { flex: 1; display: none; overflow-y: auto; background: var(--bg-main); padding: 16px; }
+        .tab-section.active .content-wrap { display: block; height: 100%; }
+        .page-header { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+        .card { background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; }
+        
+        .tab-section { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+        .tab-section.active { display: flex; }
+
+        /* ========================================================
+           MODALS & FULL SCREENS
+           ======================================================== */
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; flex-direction: column; justify-content: flex-end; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .bottom-sheet { background: var(--bg-panel); border-radius: 24px 24px 0 0; width: 100%; max-height: 85%; padding: 12px 20px 30px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); display: flex; flex-direction: column;}
+        .modal-overlay.active .bottom-sheet { transform: translateY(0); }
+        .bs-drag-handle { width: 40px; height: 4px; background: var(--text-gray); border-radius: 4px; margin: 0 auto 16px; opacity: 0.5;}
+        .bs-title { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 24px; color: var(--text-white);}
+        
+        .cs-section-title { font-size: 12px; color: var(--text-gray); font-weight: 700; margin-bottom: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;}
+        .cs-pill-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; margin-bottom: 10px; }
+        .cs-pill-scroll::-webkit-scrollbar { display: none; }
+        .cs-pill { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; border: 1px solid var(--text-gray); color: var(--text-gray); transition: 0.2s; }
+        .cs-pill i { font-size: 18px; }
+        .cs-pill.active { background: var(--bg-input); border-color: transparent; color: var(--text-white); }
+
+        .account-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto;}
+        .acc-card { display: flex; flex-direction: column; padding: 16px; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+        .acc-card.active { background: var(--bg-input); }
+        .acc-row-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .acc-info-wrapper { display: flex; align-items: center; gap: 12px; }
+        .acc-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 14px; color: white; overflow: hidden; }
+        .icon-demo { background: #ffb300; } 
+        .icon-idr { display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); } 
+        .icon-idr .red { background: #e53935; height: 50%; width: 100%; }
+        .icon-idr .white { background: #ffffff; height: 50%; width: 100%; }
+        .acc-details { display: flex; flex-direction: column; gap: 4px; }
+        .acc-name { font-size: 15px; color: var(--text-white); }
+        .acc-bal { font-size: 13px; color: var(--text-gray); }
+        .acc-more { color: var(--text-gray); font-size: 20px; padding: 4px; }
+        
+        .acc-actions { display: none; gap: 10px; margin-top: 16px; }
+        .acc-card.active .acc-actions { display: flex; }
+        .btn-bs { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .btn-tarik { background: var(--bg-main); color: var(--text-white); }
+        .btn-depo { background: var(--ot-green); color: black; }
+        .add-acc-btn { display: flex; align-items: center; gap: 12px; padding: 16px; color: var(--text-white); font-weight: 500; font-size: 15px; margin-top: 10px; cursor: pointer;}
+        
+        .payment-menu { display: flex; flex-direction: column; gap: 12px; }
+        .btn-payment { display: flex; align-items: center; width: 100%; padding: 18px 20px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; position: relative; }
+        .btn-payment i { font-size: 22px; position: absolute; left: 20px; }
+        .btn-payment span { flex: 1; text-align: center; }
+        .btn-pay-deposit { background: var(--ot-green); color: #000; }
+        .btn-pay-other { background: var(--bg-input); color: var(--text-white); }
+
+        .fs-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-panel); z-index: 200; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
+        .fs-modal.right-side { transform: translateX(100%); }
+        .fs-modal.active { transform: translateX(0); }
+        
+        .fs-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 16px; font-size: 22px; font-weight: 700; }
+        .fs-header i { cursor: pointer; font-size: 24px; color: var(--text-white); }
+        .fs-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column;}
+        
+        /* --- STYLE MENU PROFIL --- */
+        .prof-header-wrap { display: flex; align-items: center; gap: 16px; padding: 10px 20px 24px; }
+        .prof-avatar { width: 50px; height: 50px; border-radius: 50%; background: #00a4ff; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 700; color: white;}
+        .prof-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .prof-id { font-size: 13px; color: var(--text-gray); }
+        
+        .prof-status-card { background: var(--bg-input); border-radius: 12px; padding: 16px; margin: 0 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .prof-status-left { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--ot-green); font-size: 16px;}
+        .prof-status-icon { background: rgba(0, 230, 118, 0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        
+        .prof-menu-item { display: flex; align-items: center; gap: 16px; padding: 16px 20px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .prof-menu-item:active { background: var(--bg-input); }
+        .prof-menu-item i { font-size: 22px; color: var(--text-gray); }
+
+        /* --- STYLE MARKET ASSETS MENU --- */
+        .market-list-container { display: flex; flex-direction: column; }
+        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-dim); cursor: pointer; transition: 0.2s;}
+        .asset-item:active { background: var(--bg-input); }
+        .asset-item-left { display: flex; align-items: center; gap: 12px; }
+        .asset-icon-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 16px; font-weight: bold;}
+        .asset-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .asset-name { font-size: 15px; font-weight: 700; color: var(--text-white); }
+        .asset-desc { font-size: 12px; color: var(--text-gray); }
+        .asset-payout { font-size: 14px; font-weight: 700; color: var(--ot-green); background: rgba(0, 230, 118, 0.1); padding: 4px 8px; border-radius: 6px;}
+
+        /* Modals lainnya */
+        .deposit-acc-info { font-size: 13px; color: var(--text-gray); margin-bottom: 20px; margin-top: -10px; padding: 0 16px;}
+        .depo-group { background: var(--bg-input); border-radius: 12px; margin-bottom: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .depo-group-left { display: flex; align-items: center; gap: 16px; }
+        .depo-icon { width: 32px; height: 32px; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        .depo-text { display: flex; flex-direction: column; gap: 4px; }
+        .depo-label { font-size: 12px; color: var(--text-gray); }
+        .depo-val { font-size: 16px; font-weight: 700; color: var(--text-white); }
+        
+        .btn-fs-green { background: var(--ot-green); color: black; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; width: 100%; margin-top: auto; cursor: pointer; }
+        .ssl-info { text-align: center; font-size: 11px; color: var(--text-gray); margin-top: 24px; padding: 0 20px; line-height: 1.5; }
+        .ssl-info i { font-size: 18px; color: var(--ot-green); display: block; margin-bottom: 8px; }
+
+        .pm-item { display: flex; align-items: center; gap: 16px; padding: 16px; cursor: pointer; }
+        .pm-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: white;}
+        .pm-icon-qris { background: transparent; font-size: 24px;}
+        .pm-icon-dana { background: #118ee0; }
+        
+        .nom-input-box { background: var(--bg-input); border-radius: 12px; padding: 16px; margin-bottom: 20px;}
+        .nom-input-box label { font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 4px;}
+        .nom-input-box input { background: transparent; border: none; color: var(--text-white); font-size: 18px; outline: none; width: 100%;}
+        .nom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px; }
+        .nom-btn { background: var(--bg-input); padding: 20px 10px; border-radius: 12px; color: var(--text-white); font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-screen" class="welcome-container">
+        <div class="logo-container">
+            <i class="ri-triangle-fill logo-icon"></i>
+        </div>
+        <div class="text-section">
+            <div class="welcome-heading">Selamat datang<br>di AuraFX Broker</div>
+            <div class="welcome-subheading">Gabung bersama 100 juta lebih trader yang<br>sedang mengejar target keuangan</div>
+        </div>
+        <div class="action-section">
+            <button class="btn-mulai" onclick="masukAplikasi()">Mulai</button>
+            <div class="login-link">
+                Sudah punya akun? <span onclick="masukAplikasi()">Masuk</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        
+        <div class="header-ot">
+            <div class="profile-btn" onclick="openFSModal('fs-profile-menu')">
+                <i class="ri-user-3-line"></i>
+                <div class="profile-status"><i class="ri-arrow-up-s-line"></i></div>
+            </div>
+            <div class="account-center" onclick="openModal('modal-akun')">
+                <div class="acc-balance" id="header-balance">IDR 0,00</div>
+                <div class="acc-type" id="header-type">IDR Akun Anda <i class="ri-arrow-down-s-line"></i></div>
+            </div>
+            <div class="wallet-btn" onclick="openModal('modal-pembayaran')">
+                <i class="ri-wallet-3-line"></i>
+            </div>
+        </div>
+
+        <div id="tab-trade" class="tab-section active">
+            
+            <div class="asset-toolbar">
+                <div class="asset-selector" onclick="openFSModal('fs-market-list')">
+                    <div class="asset-icon" id="header-asset-icon"></div>
+                    <span id="lbl-active-asset">Bitcoin</span> <i class="ri-arrow-down-s-line" style="color: var(--text-gray);"></i>
+                </div>
+                <div class="chart-tools">
+                    <i class="ri-sensor-line"></i>
+                    <i class="ri-compasses-2-line"></i>
+                    <div class="tf-badge" onclick="openModal('modal-chart-settings')">
+                        <i class="ri-bar-chart-2-fill" id="ic-chart-type"></i> 
+                        <span id="lbl-timeframe">5s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container" id="chart-container">
+                <div class="sentiment-bar">
+                    <div class="sent-red"><div class="sent-label-red">48%</div></div>
+                    <div class="sent-green"><div class="sent-label-green">52%</div></div>
+                </div>
+                
+                <canvas id="chartCanvas"></canvas>
+                
+                <div id="active-trades-layer"></div>
+                
+                <div class="current-price-tracker" id="price-tracker">
+                    <div class="cpt-timer" id="cpt-timer">00:05</div>
+                    <div class="cpt-badge" id="cpt-tag">...</div>
+                </div>
+            </div>
+
+            <div class="trade-panel">
+                <div class="trade-info">
+                    <span>Mode Flex</span>
+                    <span>Profitabilitas hingga <span id="lbl-payout">85%</span> <i class="ri-question-fill"></i></span>
+                </div>
+                <div class="stepper-row">
+                    <div class="stepper">
+                        <button class="stepper-btn" onclick="ubahWaktuFlex(-1)">-</button>
+                        <input type="text" id="input-waktu-flex" class="stepper-input" value="10 mnt" readonly>
+                        <button class="stepper-btn" onclick="ubahWaktuFlex(1)">+</button>
+                    </div>
+                    <div class="stepper">
+                        <button class="stepper-btn" onclick="ubahNominal(-1000)">-</button>
+                        <input type="text" id="input-nominal" class="stepper-input" value="Rp10.000">
+                        <button class="stepper-btn" onclick="ubahNominal(1000)">+</button>
+                    </div>
+                </div>
+                <div class="action-row">
+                    <button class="btn-trade btn-jual" onclick="eksekusiOrder('SELL')">
+                        <span style="font-size: 18px;">Jual</span>
+                        <i class="ri-arrow-down-line" style="font-size:22px;"></i>
+                    </button>
+                    <button class="btn-clock">
+                        <i class="ri-time-line"></i>
+                    </button>
+                    <button class="btn-trade btn-beli" onclick="eksekusiOrder('BUY')">
+                        <span style="font-size: 18px;">Beli</span>
+                        <i class="ri-arrow-up-line" style="font-size:22px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-transaksi" class="tab-section">
+            <div class="content-wrap">
+                <div class="page-header">Transaksi Berjalan</div>
+                <div id="position-list"></div>
+                <div class="page-header" style="margin-top: 30px;">Riwayat Transaksi</div>
+                <div id="history-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-hadiah" class="tab-section">
+            <div class="content-wrap">
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; padding-top: 50px;">
+                    <i class="ri-trophy-line" style="font-size: 60px; color: var(--text-gray); margin-bottom: 20px;"></i>
+                    <h2 style="color: var(--text-white); letter-spacing: 2px;">COMING SOON</h2>
+                    <p style="color: var(--text-gray); font-size: 14px; margin-top: 10px;">Fitur Hadiah & Turnamen sedang dalam tahap pengembangan.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-bantuan" class="tab-section">
+            <div class="content-wrap">
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; padding-top: 50px;">
+                    <i class="ri-customer-service-2-line" style="font-size: 60px; color: var(--text-gray); margin-bottom: 20px;"></i>
+                    <h2 style="color: var(--text-white); letter-spacing: 2px;">COMING SOON</h2>
+                    <p style="color: var(--text-gray); font-size: 14px; margin-top: 10px;">Pusat Bantuan & Dukungan Pelanggan akan segera tersedia.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="pindahTab('trade', this)">
+                <i class="ri-line-chart-fill"></i><span>Terminal</span>
+            </div>
+            <div class="nav-item" onclick="pindahTab('transaksi', this)">
+                <i class="ri-arrow-up-down-line"></i><span>Transaksi</span>
+            </div>
+            <div class="nav-item" onclick="pindahTab('hadiah', this)">
+                <i class="ri-trophy-line"></i><span>Hadiah</span>
+            </div>
+            <div class="nav-item" onclick="pindahTab('bantuan', this)">
+                <i class="ri-question-answer-line"></i><span>Bantuan</span>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-chart-settings" onclick="closeModal('modal-chart-settings', event)">
+            <div class="bottom-sheet" onclick="event.stopPropagation()">
+                <div class="bs-drag-handle"></div>
+                <div class="cs-section-title">Rentang Waktu Candle <i class="ri-question-fill"></i></div>
+                <div class="cs-pill-scroll">
+                    <div class="cs-pill active" id="tf-5s" onclick="setTF('5s')">5s</div>
+                    <div class="cs-pill" id="tf-10s" onclick="setTF('10s')">10s</div>
+                    <div class="cs-pill" id="tf-15s" onclick="setTF('15s')">15s</div>
+                    <div class="cs-pill" id="tf-20s" onclick="setTF('20s')">20s</div>
+                    <div class="cs-pill" id="tf-30s" onclick="setTF('30s')">30s</div>
+                    <div class="cs-pill" id="tf-1m" onclick="setTF('1m')">1m</div>
+                    <div class="cs-pill" id="tf-10m" onclick="setTF('10m')">10m</div>
+                </div>
+                <div class="cs-section-title" style="margin-top: 20px;">Jenis Grafik</div>
+                <div class="cs-pill-scroll">
+                    <div class="cs-pill" id="ct-area" onclick="setChartType('area')"><i class="ri-funds-line"></i> Area</div>
+                    <div class="cs-pill active" id="ct-candlestick" onclick="setChartType('candlestick')"><i class="ri-bar-chart-2-fill"></i> Candlestick</div>
+                    <div class="cs-pill" id="ct-heikin" onclick="setChartType('heikin')"><i class="ri-bar-chart-2-fill"></i> Heikin Ashi</div>
+                    <div class="cs-pill" id="ct-batang" onclick="setChartType('batang')"><i class="ri-bar-chart-box-line"></i> Batang</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-akun" onclick="closeModal('modal-akun', event)">
+            <div class="bottom-sheet" onclick="event.stopPropagation()">
+                <div class="bs-drag-handle"></div>
+                <div class="bs-title">Akun</div>
+                <div class="account-list">
+                    <div class="acc-card" id="card-demo" onclick="switchAccount('DEMO')">
+                        <div class="acc-row-top">
+                            <div class="acc-info-wrapper">
+                                <div class="acc-icon icon-demo">Đ</div>
+                                <div class="acc-details">
+                                    <div class="acc-name">Akun demo</div>
+                                    <div class="acc-bal" id="modal-demo-bal">Đ10.000,00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="acc-card active" id="card-idr" onclick="switchAccount('IDR')">
+                        <div class="acc-row-top">
+                            <div class="acc-info-wrapper">
+                                <div class="acc-icon icon-idr"><div class="red"></div><div class="white"></div></div>
+                                <div class="acc-details">
+                                    <div class="acc-name">IDR Akun Anda</div>
+                                    <div class="acc-bal" id="modal-idr-bal">IDR 0,00</div>
+                                </div>
+                            </div>
+                            <div class="acc-more"><i class="ri-more-2-fill"></i></div>
+                        </div>
+                        <div class="acc-actions">
+                            <button class="btn-bs btn-tarik" onclick="event.stopPropagation(); openWithdrawFlow(); closeModal('modal-akun', event);">Tarik</button>
+                            <button class="btn-bs btn-depo" onclick="event.stopPropagation(); openDepositFlow(); closeModal('modal-akun', event);">Deposit</button>
+                        </div>
+                    </div>
+                    <div class="acc-card">
+                        <div class="acc-row-top">
+                            <div class="acc-info-wrapper">
+                                <div class="acc-icon icon-usdt">₮</div>
+                                <div class="acc-details">
+                                    <div class="acc-name">USDT Akun Anda</div>
+                                    <div class="acc-bal">USDT 0,00</div>
+                                </div>
+                            </div>
+                            <div class="acc-more"><i class="ri-more-2-fill"></i></div>
+                        </div>
+                    </div>
+                    <div class="add-acc-btn"><i class="ri-add-line"></i> Tambah Akun</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-pembayaran" onclick="closeModal('modal-pembayaran', event)">
+            <div class="bottom-sheet" onclick="event.stopPropagation()">
+                <div class="bs-drag-handle"></div>
+                <div class="bs-title">Pembayaran</div>
+                <div class="payment-menu">
+                    <button class="btn-payment btn-pay-deposit" onclick="openDepositFlow(); closeModal('modal-pembayaran', event)">
+                        <i class="ri-wallet-3-line"></i><span>Deposit</span>
+                    </button>
+                    <button class="btn-payment btn-pay-other" onclick="openWithdrawFlow(); closeModal('modal-pembayaran', event)">
+                        <i class="ri-upload-2-line"></i><span>Tarik</span>
+                    </button>
+                    <button class="btn-payment btn-pay-other">
+                        <i class="ri-arrow-left-right-line"></i><span>Transfer Internal</span>
+                    </button>
+                    <button class="btn-payment btn-pay-other" onclick="pindahTab('transaksi', document.querySelectorAll('.nav-item')[1]); closeModal('modal-pembayaran', event)">
+                        <i class="ri-history-line"></i><span>Transaksi</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-modal right-side" id="fs-market-list">
+            <div class="fs-header">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-market-list')"></i>
+                <span>Pasar Internasional</span>
+            </div>
+            <div class="fs-body" style="padding: 0;">
+                <div style="padding: 16px;">
+                    <div class="nom-input-box" style="margin-bottom: 0; padding: 12px 16px; display:flex; align-items:center; gap: 10px;">
+                        <i class="ri-search-line" style="color:var(--text-gray); font-size:18px;"></i>
+                        <input type="text" placeholder="Cari aset Global..." style="font-size:15px; color:white;">
+                    </div>
+                </div>
+                <div class="cs-pill-scroll" style="padding: 0 16px 10px;">
+                    <div class="cs-pill active"><i class="ri-live-fill" style="color:red; font-size:14px;"></i> Live Crypto</div>
+                    <div class="cs-pill">Komoditas</div>
+                    <div class="cs-pill">Top Volume</div>
+                </div>
+                
+                <div class="market-list-container">
+                    
+                    <div class="asset-item" onclick="pilihAset('BTCUSDT', 'Bitcoin', '#f7931a', 85, 'ri-bit-coin-line')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#f7931a;"><i class="ri-bit-coin-line"></i></div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Bitcoin (BTC)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">85%</div></div>
+                    </div>
+                    
+                    <div class="asset-item" onclick="pilihAset('ETHUSDT', 'Ethereum', '#627eea', 82, 'Ξ')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#627eea;">Ξ</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Ethereum (ETH)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">82%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('SOLUSDT', 'Solana', '#14F195', 80, 'S')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#14F195; color:black;">S</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Solana (SOL)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">80%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('BNBUSDT', 'Binance Coin', '#f3ba2f', 83, 'B')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#f3ba2f; color:black;">B</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Binance Coin (BNB)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">83%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('XRPUSDT', 'Ripple', '#23292f', 78, 'X')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#23292f; border: 1px solid #444;">X</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Ripple (XRP)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">78%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('ADAUSDT', 'Cardano', '#0033ad', 75, 'A')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#0033ad;">A</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Cardano (ADA)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">75%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('DOGEUSDT', 'Dogecoin', '#c2a633', 88, 'Ð')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#c2a633;">Ð</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Dogecoin (DOGE)</div>
+                                <div class="asset-desc">Pasar Global Aktif</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">88%</div></div>
+                    </div>
+
+                    <div class="asset-item" onclick="pilihAset('PAXGUSDT', 'Emas (PAXG)', '#d4af37', 90, 'Au')">
+                        <div class="asset-item-left">
+                            <div class="asset-icon-circle" style="background:#d4af37; color:black;">Au</div>
+                            <div class="asset-item-info">
+                                <div class="asset-name">Emas / Gold (PAXG)</div>
+                                <div class="asset-desc">Komoditas Global Real-Time</div>
+                            </div>
+                        </div>
+                        <div class="asset-item-right"><div class="asset-payout">90%</div></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-modal" id="fs-profile-menu">
+            <div class="fs-header" style="justify-content: flex-start; gap: 24px;">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-profile-menu')"></i>
+                <span>Profil</span>
+            </div>
+            <div class="fs-body" style="padding: 0;">
+                <div class="prof-header-wrap">
+                    <div class="prof-avatar">A</div>
+                    <div>
+                        <div class="prof-name">Ari Mulya Rizki</div>
+                        <div class="prof-id">ID 2931759472</div>
+                    </div>
+                </div>
+                <div class="prof-status-card">
+                    <div class="prof-status-left">
+                        <div class="prof-status-icon"><i class="ri-vip-crown-fill"></i></div>
+                        <span>Starter</span>
+                    </div>
+                    <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 24px;"></i>
+                </div>
+                <div class="prof-menu-item" onclick="openDepositFlow(); closeFSModal('fs-profile-menu');">
+                    <i class="ri-wallet-3-line"></i><span>Deposit</span>
+                </div>
+                <div class="prof-menu-item" onclick="openWithdrawFlow(); closeFSModal('fs-profile-menu');">
+                    <i class="ri-upload-2-line"></i><span>Tarik</span>
+                </div>
+                <div class="prof-menu-item" onclick="closeFSModal('fs-profile-menu');">
+                    <i class="ri-arrow-left-right-line"></i><span>Transfer</span>
+                </div>
+                <div class="prof-menu-item" onclick="pindahTab('transaksi', document.querySelectorAll('.nav-item')[1]); closeFSModal('fs-profile-menu');">
+                    <i class="ri-history-line"></i><span>Transaksi</span>
+                </div>
+                <div class="prof-menu-item" onclick="closeFSModal('fs-profile-menu');">
+                    <i class="ri-bar-chart-box-line"></i><span>Perdagangan</span>
+                </div>
+                <div class="prof-menu-item" onclick="closeFSModal('fs-profile-menu');">
+                    <i class="ri-calendar-event-line"></i><span>Acara</span>
+                </div>
+                <div class="prof-menu-item" onclick="closeFSModal('fs-profile-menu');">
+                    <i class="ri-chat-1-line"></i><span>Bantuan</span>
+                </div>
+                <div class="prof-menu-item" onclick="closeFSModal('fs-profile-menu');">
+                    <i class="ri-settings-3-line"></i><span>Pengaturan</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-modal right-side" id="fs-deposit-main">
+            <div class="fs-header">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-deposit-main')"></i>
+                <span>Deposit</span>
+                <i class="ri-close-line" onclick="closeFSModal('fs-deposit-main')"></i>
+            </div>
+            <div class="deposit-acc-info">IDR Akun Anda No.2931759472</div>
+            <div class="fs-body" style="padding-top: 0;">
+                <div class="depo-group" onclick="openFSModal('fs-payment-methods')">
+                    <div class="depo-group-left">
+                        <div class="depo-icon"><i class="ri-qr-code-line"></i></div>
+                        <div class="depo-text">
+                            <span class="depo-label">Metode pembayaran</span>
+                            <span class="depo-val" id="lbl-pay-method">QRIS</span>
+                        </div>
+                    </div>
+                    <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 20px;"></i>
+                </div>
+                <div class="depo-group" onclick="openFSModal('fs-nominal-selector')">
+                    <div class="depo-group-left">
+                        <div class="depo-text">
+                            <span class="depo-label">Nominal</span>
+                            <span class="depo-val" id="lbl-pay-amount">IDR 450.000</span>
+                        </div>
+                    </div>
+                    <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 20px;"></i>
+                </div>
+                <div class="depo-group">
+                    <div class="depo-group-left"><span class="depo-val">Pilih Kode Promo</span></div>
+                    <span class="depo-val">2</span>
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn-fs-green" onclick="submitRealDeposit()">Selanjutnya</button>
+                <div class="ssl-info">
+                    <i class="ri-lock-2-line"></i>
+                    Data Anda dienkripsi menggunakan sertifikat SSL 256-bit yang menawarkan tingkat keamanan tertinggi.
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-modal right-side" id="fs-payment-methods">
+            <div class="fs-header">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-payment-methods')"></i>
+                <span>Metode pembayaran</span>
+            </div>
+            <div class="fs-body" style="padding-top: 0;">
+                <div class="pm-item" onclick="selectPayment('QRIS', 'ri-qr-code-line')">
+                    <div class="pm-icon pm-icon-qris"><i class="ri-qr-code-line"></i></div><span>QRIS</span>
+                </div>
+                <div class="pm-item" onclick="selectPayment('DANA', 'D')">
+                    <div class="pm-icon pm-icon-dana">D</div><span>DANA</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-modal right-side" id="fs-nominal-selector">
+            <div class="fs-header">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-nominal-selector')"></i>
+                <span>Nominal Deposit</span>
+            </div>
+            <div class="fs-body">
+                <div class="nom-input-box">
+                    <label>Nominal, IDR</label>
+                    <input type="number" id="nom-custom-input" value="450000">
+                </div>
+                <div class="nom-grid">
+                    <div class="nom-btn" onclick="setNominal(1800000)">IDR 1.800.000</div>
+                    <div class="nom-btn" onclick="setNominal(1500000)">IDR 1.500.000</div>
+                    <div class="nom-btn" onclick="setNominal(450000)">IDR 450.000</div>
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn-fs-green" onclick="confirmNominal()">Konfirmasi</button>
+            </div>
+        </div>
+
+        <div class="fs-modal right-side" id="fs-withdraw-main">
+            <div class="fs-header">
+                <i class="ri-arrow-left-s-line" onclick="closeFSModal('fs-withdraw-main')"></i>
+                <span>Penarikan Dana</span>
+                <i class="ri-close-line" onclick="closeFSModal('fs-withdraw-main')"></i>
+            </div>
+            <div class="deposit-acc-info" id="lbl-withdraw-avail" style="font-size: 14px; font-weight: 700; color: white;">Tersedia untuk ditarik: IDR 0,00</div>
+            <div class="fs-body" style="padding-top: 0;">
+                <div class="nom-input-box">
+                    <label>Nominal Penarikan, IDR</label>
+                    <input type="number" id="input-withdraw-amount" placeholder="Minimal 50000">
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn-fs-green" style="background: var(--bg-input); color: white;" onclick="submitRealWithdraw()">Kirim Permintaan</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FUNGSI MASUK DARI HALAMAN WELCOME ---
+        function masukAplikasi() {
+            // Sembunyikan layar welcome dengan menambahkan kelas 'hidden'
+            document.getElementById('welcome-screen').classList.add('hidden');
+            
+            // Trigger event resize setelah animasi selesai (400ms) agar canvas chart dimuat dengan ukuran sempurna
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 400);
+        }
+
+        // --- 1. STATE & VARIABEL UTAMA ---
+        let balanceIDR = 0; 
+        let balanceDemo = 10000;
+        let activeAccountType = 'IDR'; 
+        let openPositions = [];
+        let closedPositions = [];
+        let nominalSekarang = 10000;
+
+        let depoSelectedMethod = 'QRIS';
+        let depoSelectedAmount = 450000;
+
+        let currentChartType = 'candlestick'; 
+        let currentTimeframe = '5s';
+        let maxTimerValue = 5;
+        let currentTimer = 5;
+
+        // Market State
+        let currentAssetName = "Bitcoin";
+        let currentAssetPayout = 85;
+        let liveWebSocket = null;
+
+        // Data & State Waktu Flex
+        const opsiWaktuFlex = [
+            "5det", "15det", "30det", "45det", 
+            "1 mnt", "2 mnt", "3 mnt", "4 mnt", "5 mnt", "6 mnt", "7 mnt", "8 mnt", "9 mnt", "10 mnt", 
+            "15 mnt", "20 mnt", "25 mnt", "30 mnt", 
+            "1 j", "2 j", "3 j", "4 j", "5 j", "6 j", "7 j", "8 j", "9 j", "10 j", "11 j", "12 j", 
+            "13 j", "14 j", "15 j", "16 j", "17 j", "18 j", "19 j", "20 j", "21 j", "22 j", "23 j"
+        ];
+        let indeksWaktuFlex = 13; // Default ke "10 mnt" (index ke-13)
+
+        // --- 2. CANVAS ENGINE ---
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let chartData = []; 
+        let zoom = 1.0; 
+        let panOffset = 0; 
+        
+        let targetPrice = 0;
+        let displayPrice = 0; 
+
+        // Warna yang direfine untuk lebih crisp dan profesional
+        const colGreen = '#00e676';
+        const colRed = '#ff4b55';
+        const colGrid = 'rgba(255,255,255,0.05)';
+        const colText = '#555555';
+
+        let isDragging = false;
+        let startX = 0;
+        let initialPinchDist = null;
+
+        function initCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            canvas.addEventListener('touchend', handleTouchEnd);
+            canvas.addEventListener('wheel', handleWheel, {passive: false});
+
+            requestAnimationFrame(animateLoop);
+            
+            // Auto connect ke BTC pertama kali
+            pilihAset('BTCUSDT', 'Bitcoin', '#f7931a', 85, 'ri-bit-coin-line');
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - panOffset;
+            } else if (e.touches.length === 2) {
+                initialPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length === 1 && isDragging) {
+                panOffset = e.touches[0].clientX - startX;
+                if(panOffset > 0) panOffset = 0; 
+            } else if (e.touches.length === 2 && initialPinchDist) {
+                let dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                let scale = dist / initialPinchDist;
+                zoom *= scale;
+                zoom = Math.max(0.8, Math.min(zoom, 5)); 
+                initialPinchDist = dist;
+            }
+        }
+
+        function handleTouchEnd(e) { isDragging = false; initialPinchDist = null; }
+        
+        function handleWheel(e) {
+            e.preventDefault();
+            zoom += e.deltaY * -0.002;
+            zoom = Math.max(0.8, Math.min(zoom, 5));
+        }
+
+        function animateLoop() {
+            if(chartData.length > 0) {
+                displayPrice += (targetPrice - displayPrice) * 0.15;
+
+                let lastIdx = chartData.length - 1;
+                chartData[lastIdx].c = displayPrice;
+                if(displayPrice > chartData[lastIdx].h) chartData[lastIdx].h = displayPrice;
+                if(displayPrice < chartData[lastIdx].l) chartData[lastIdx].l = displayPrice;
+
+                drawCanvas();
+            }
+            requestAnimationFrame(animateLoop);
+        }
+
+        function drawCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            let baseCw = 6 * zoom;
+            let cw = Math.max(5, Math.floor(baseCw)); 
+            if (cw % 2 === 0) cw += 1; 
+            
+            let sp = Math.max(2, Math.floor(2 * zoom)); 
+            let totalW = cw + sp;
+
+            let rightMargin = 85; 
+            let effectiveWidth = width - rightMargin;
+
+            let exactLastX = effectiveWidth - (0 * totalW) + panOffset - totalW / 2;
+            let lastXCenter = Math.floor(exactLastX) + 0.5;
+            let dotX = Math.min(effectiveWidth + 5, Math.max(8, lastXCenter)); 
+
+            let startIndex = Math.max(0, chartData.length - Math.ceil((effectiveWidth - panOffset) / totalW) - 1);
+            let endIndex = Math.min(chartData.length - 1, chartData.length - Math.floor(-panOffset / totalW) + 1);
+
+            let visibleData = chartData.slice(startIndex, endIndex + 1);
+            if(visibleData.length === 0) return;
+
+            let minP = Math.min(...visibleData.map(d => d.l));
+            let maxP = Math.max(...visibleData.map(d => d.h));
+            
+            if (maxP - minP < displayPrice * 0.0001) {
+                let padLimit = displayPrice * 0.0001;
+                maxP += padLimit; minP -= padLimit;
+            }
+
+            let pricePadding = (maxP - minP) * 0.10; 
+            minP -= pricePadding;
+            maxP += pricePadding;
+
+            const getY = (price) => Math.round(height - ((price - minP) / (maxP - minP)) * height);
+
+            ctx.strokeStyle = colGrid;
+            ctx.lineWidth = 1;
+            ctx.font = "10px monospace";
+            ctx.fillStyle = colText;
+            ctx.textAlign = "right";
+            
+            for(let i=1; i<=4; i++) {
+                let yLine = Math.floor((height / 5) * i) + 0.5;
+                let priceVal = maxP - ((maxP - minP) * (i / 5));
+                ctx.beginPath();
+                ctx.moveTo(0, yLine); ctx.lineTo(width, yLine);
+                ctx.stroke();
+                let decimals = maxP > 1000 ? 2 : (maxP > 10 ? 3 : 5);
+                ctx.fillText(priceVal.toFixed(decimals), width - 5, yLine - 5);
+            }
+
+            let trackerY = getY(displayPrice);
+            let isTrendUp = displayPrice >= chartData[chartData.length-1].o;
+            let tColor = isTrendUp ? colGreen : colRed;
+
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]); 
+            ctx.moveTo(0, trackerY + 0.5); 
+            ctx.lineTo(width, trackerY + 0.5);
+            ctx.strokeStyle = tColor;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            let pulseRadius = 6 + Math.abs(Math.sin(Date.now() / 200)) * 5; 
+            ctx.beginPath();
+            ctx.arc(dotX, trackerY, pulseRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = isTrendUp ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 75, 85, 0.15)';
+            ctx.fill();
+
+            if (currentChartType === 'area') {
+                ctx.beginPath();
+                for(let i = startIndex; i <= endIndex; i++) {
+                    let d = chartData[i];
+                    let offsetFromRight = chartData.length - 1 - i;
+                    let exactX = effectiveWidth - (offsetFromRight * totalW) + panOffset - totalW / 2;
+                    let xCenter = Math.floor(exactX) + 0.5;
+                    let y = getY(d.c);
+                    if(i === startIndex) ctx.moveTo(xCenter, y); else ctx.lineTo(xCenter, y);
+                }
+                
+                let strokePath = new Path2D(ctx.currentPath);
+                ctx.lineTo(effectiveWidth, height); ctx.lineTo(0, height); ctx.closePath();
+                
+                let grd = ctx.createLinearGradient(0, 0, 0, height);
+                grd.addColorStop(0, "rgba(33, 150, 243, 0.4)"); grd.addColorStop(1, "rgba(33, 150, 243, 0.0)");
+                ctx.fillStyle = grd; ctx.fill();
+
+                ctx.strokeStyle = 'var(--ot-blue)'; ctx.lineWidth = 1.5; ctx.stroke(strokePath);
+            } else {
+                let prevHaClose = null, prevHaOpen = null;
+
+                for(let i = startIndex; i <= endIndex; i++) {
+                    let d = chartData[i];
+                    let offsetFromRight = chartData.length - 1 - i;
+                    
+                    let exactX = effectiveWidth - (offsetFromRight * totalW) + panOffset - totalW / 2;
+                    let xCenter = Math.floor(exactX) + 0.5;
+                    let xLeft = Math.floor(exactX) - Math.floor(cw / 2);
+
+                    let o = d.o, h = d.h, l = d.l, c = d.c;
+
+                    if (currentChartType === 'heikin') {
+                        let haClose = (d.o + d.h + d.l + d.c) / 4;
+                        let haOpen = (prevHaOpen !== null) ? (prevHaOpen + prevHaClose) / 2 : d.o;
+                        o = haOpen; h = Math.max(d.h, haOpen, haClose); l = Math.min(d.l, haOpen, haClose); c = haClose;
+                        prevHaOpen = haOpen; prevHaClose = haClose;
+                    }
+
+                    let isGreen = c >= o;
+                    ctx.fillStyle = isGreen ? colGreen : colRed;
+                    ctx.strokeStyle = isGreen ? colGreen : colRed;
+                    ctx.lineWidth = 1;
+
+                    let yO = getY(o), yC = getY(c), yH = getY(h), yL = getY(l);
+
+                    if (currentChartType === 'batang') {
+                        ctx.beginPath();
+                        ctx.moveTo(xCenter, yH); ctx.lineTo(xCenter, yL); 
+                        ctx.moveTo(xLeft, yO + 0.5); ctx.lineTo(Math.floor(xCenter), yO + 0.5); 
+                        ctx.moveTo(Math.ceil(xCenter), yC + 0.5); ctx.lineTo(xLeft + cw, yC + 0.5); 
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(xCenter, yH); ctx.lineTo(xCenter, yL);
+                        ctx.stroke();
+
+                        let bodyTop = Math.min(yO, yC);
+                        let bodyBottom = Math.max(yO, yC);
+                        let bodyHeight = bodyBottom - bodyTop;
+                        
+                        if (bodyHeight < 2) {
+                            bodyHeight = 2; 
+                            bodyTop = Math.floor((yO + yC) / 2) - 1;
+                        }
+                        
+                        ctx.fillRect(xLeft, bodyTop, cw, bodyHeight);
+                    }
+                }
+            }
+
+            ctx.beginPath();
+            ctx.arc(dotX, trackerY, 3.5, 0, 2 * Math.PI); 
+            ctx.fillStyle = tColor;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            const trackerOverlay = document.getElementById('price-tracker');
+            const badge = document.getElementById('cpt-tag');
+            
+            badge.style.background = tColor;
+            let decimals = maxP > 1000 ? 2 : (maxP > 10 ? 3 : 5);
+            badge.innerText = displayPrice.toFixed(decimals);
+            
+            if(trackerY < 0) trackerY = 0; if(trackerY > height) trackerY = height;
+            trackerOverlay.style.top = `${trackerY}px`;
+
+            openPositions.forEach(pos => {
+                let el = document.getElementById('tm-' + pos.id);
+                if(el) {
+                    let yPos = getY(pos.openPrice);
+                    el.style.transform = `translateY(${yPos}px)`;
+                }
+            });
+        }
+
+        // --- 3. MARKET LOGIC (100% REAL-TIME BINANCE WEBSOCKET) ---
+        let timerInterval;
+
+        function pilihAset(symbol, name, colorStr, payout, iconChar) {
+            currentAssetName = name;
+            currentAssetPayout = payout;
+            
+            document.getElementById('lbl-active-asset').innerText = name.length > 10 ? name.substring(0,10)+"..." : name;
+            document.getElementById('lbl-payout').innerText = `${payout}%`;
+            
+            let headIcon = document.getElementById('header-asset-icon');
+            headIcon.style.background = colorStr;
+            headIcon.innerHTML = iconChar.startsWith('ri-') ? `<i class="${iconChar}"></i>` : `<span>${iconChar}</span>`;
+            
+            closeFSModal('fs-market-list');
+
+            if(liveWebSocket) { liveWebSocket.close(); liveWebSocket = null; }
+            if(timerInterval) clearInterval(timerInterval);
+            
+            chartData = [];
+
+            liveWebSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@trade`);
+            
+            let isFirstTick = true;
+            liveWebSocket.onmessage = (event) => {
+                let data = JSON.parse(event.data);
+                let price = parseFloat(data.p);
+                targetPrice = price;
+
+                if (isFirstTick) {
+                    displayPrice = price;
+                    buatDataAwal(price);
+                    jalankanTimerCandle(); 
+                    isFirstTick = false;
+                }
+            };
+        }
+
+        function buatDataAwal(currentP) {
+            chartData = [];
+            let p = currentP;
+            let history = [];
+            for(let i=0; i<150; i++) {
+                let open = p;
+                let volatility = currentP * 0.0005;
+                let close = open + (Math.random() - 0.5) * volatility;
+                let high = Math.max(open, close) + Math.random() * (volatility * 0.5);
+                let low = Math.min(open, close) - Math.random() * (volatility * 0.5);
+                history.unshift({o: open, h: high, l: low, c: close});
+                p = open + (Math.random() - 0.5) * volatility;
+            }
+            chartData = history;
+        }
+
+        function jalankanTimerCandle() {
+            timerInterval = setInterval(() => {
+                currentTimer--;
+                let mins = Math.floor(currentTimer / 60);
+                let secs = currentTimer % 60;
+                document.getElementById('cpt-timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if(currentTimer <= 0) {
+                    currentTimer = maxTimerValue; 
+                    chartData.push({ o: displayPrice, h: displayPrice, l: displayPrice, c: displayPrice });
+                    if(chartData.length > 500) chartData.shift(); 
+                }
+            }, 1000);
+        }
+
+        function setChartType(type) {
+            currentChartType = type;
+            document.querySelectorAll('#modal-chart-settings .cs-pill').forEach(p => p.classList.remove('active'));
+            document.getElementById(`ct-${type}`).classList.add('active');
+
+            let iconClass = 'ri-bar-chart-2-fill'; 
+            if(type === 'area') iconClass = 'ri-funds-line';
+            if(type === 'batang') iconClass = 'ri-bar-chart-box-line';
+            document.getElementById('ic-chart-type').className = iconClass;
+        }
+
+        function setTF(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('#modal-chart-settings .cs-pill').forEach(p => {
+                if(p.id.startsWith('tf-')) p.classList.remove('active');
+            });
+            document.getElementById(`tf-${tf}`).classList.add('active');
+            document.getElementById('lbl-timeframe').innerText = tf;
+
+            if(tf === '5s') maxTimerValue = 5; else if(tf === '10s') maxTimerValue = 10;
+            else if(tf === '15s') maxTimerValue = 15; else if(tf === '20s') maxTimerValue = 20;
+            else if(tf === '30s') maxTimerValue = 30; else if(tf === '1m') maxTimerValue = 60;
+            else if(tf === '10m') maxTimerValue = 600;
+
+            currentTimer = maxTimerValue;
+            chartData.push({ o: displayPrice, h: displayPrice, l: displayPrice, c: displayPrice });
+            
+            let mins = Math.floor(currentTimer / 60);
+            document.getElementById('cpt-timer').innerText = `${mins.toString().padStart(2, '0')}:${(currentTimer % 60).toString().padStart(2, '0')}`;
+        }
+
+        function formatUang(angka, isDemo = false) {
+            let formatted = Math.floor(Math.abs(angka)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return isDemo ? `Đ${formatted},00` : `Rp${formatted},00`;
+        }
+        function formatRibuan(angka) { return Math.floor(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+
+        function ubahWaktuFlex(arah) {
+            indeksWaktuFlex += arah;
+            if (indeksWaktuFlex < 0) indeksWaktuFlex = 0;
+            if (indeksWaktuFlex >= opsiWaktuFlex.length) indeksWaktuFlex = opsiWaktuFlex.length - 1;
+            document.getElementById('input-waktu-flex').value = opsiWaktuFlex[indeksWaktuFlex];
+        }
+
+        function ubahNominal(jumlah) {
+            nominalSekarang += jumlah;
+            if(nominalSekarang < 1000) nominalSekarang = 1000; 
+            document.getElementById('input-nominal').value = activeAccountType === 'DEMO' ? `Đ${formatRibuan(nominalSekarang)}` : `Rp${formatRibuan(nominalSekarang)}`;
+        }
+
+        function openModal(modalId) { document.getElementById(modalId).classList.add('active'); }
+        function closeModal(modalId, event) { if(event) event.stopPropagation(); document.getElementById(modalId).classList.remove('active'); }
+
+        function switchAccount(type) {
+            activeAccountType = type;
+            document.getElementById('card-idr').classList.remove('active');
+            document.getElementById('card-demo').classList.remove('active');
+            if(type === 'IDR') { document.getElementById('card-idr').classList.add('active'); ubahNominal(0); } 
+            else { document.getElementById('card-demo').classList.add('active'); ubahNominal(0); }
+            updateLayar();
+            closeModal('modal-akun');
+        }
+
+        function pindahTab(tabId, el) {
+            document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
+            if(el && el.classList.contains('nav-item')) {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+            }
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            if(tabId === 'transaksi') renderHistoryDanPortfolio();
+        }
+
+        function openFSModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeFSModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function openDepositFlow() {
+            document.getElementById('lbl-pay-method').innerText = depoSelectedMethod;
+            document.getElementById('lbl-pay-amount').innerText = `IDR ${formatRibuan(depoSelectedAmount)}`;
+            document.getElementById('nom-custom-input').value = depoSelectedAmount;
+            openFSModal('fs-deposit-main');
+        }
+
+        function selectPayment(method, iconClass) {
+            depoSelectedMethod = method;
+            document.getElementById('lbl-pay-method').innerText = method;
+            let mainIcon = document.querySelector('.depo-icon');
+            if(method === 'QRIS') mainIcon.innerHTML = `<i class="ri-qr-code-line"></i>`;
+            else mainIcon.innerHTML = `<div style="font-size:12px; font-weight:bold;">${iconClass}</div>`;
+            closeFSModal('fs-payment-methods');
+        }
+
+        function setNominal(amount) { document.getElementById('nom-custom-input').value = amount; }
+
+        function confirmNominal() {
+            let inputVal = document.getElementById('nom-custom-input').value;
+            depoSelectedAmount = parseFloat(inputVal);
+            if(isNaN(depoSelectedAmount) || depoSelectedAmount < 150000) return alert("Minimal deposit IDR 150.000");
+            document.getElementById('lbl-pay-amount').innerText = `IDR ${formatRibuan(depoSelectedAmount)}`;
+            closeFSModal('fs-nominal-selector');
+        }
+
+        function submitRealDeposit() {
+            balanceIDR += depoSelectedAmount;
+            closedPositions.unshift({ type: 'DEPOSIT', profit: depoSelectedAmount, method: depoSelectedMethod, time: new Date().toLocaleTimeString('id-ID'), acc: 'IDR' });
+            updateLayar();
+            alert(`✅ Pembayaran via ${depoSelectedMethod} berhasil diproses.\nIDR ${formatRibuan(depoSelectedAmount)} telah ditambahkan ke Akun Anda.`);
+            closeFSModal('fs-deposit-main');
+        }
+
+        function openWithdrawFlow() {
+            document.getElementById('lbl-withdraw-avail').innerText = `Tersedia untuk ditarik: ${formatUang(balanceIDR, false).replace("Rp", "IDR ")}`;
+            document.getElementById('input-withdraw-amount').value = '';
+            openFSModal('fs-withdraw-main');
+        }
+
+        function submitRealWithdraw() {
+            let amt = parseFloat(document.getElementById('input-withdraw-amount').value);
+            if(isNaN(amt) || amt < 50000) return alert("Minimal penarikan IDR 50.000");
+            if(amt > balanceIDR) return alert("Penarikan gagal! Saldo IDR Anda tidak mencukupi.");
+
+            balanceIDR -= amt;
+            closedPositions.unshift({ type: 'WITHDRAW', profit: -amt, method: 'Transfer Bank', time: new Date().toLocaleTimeString('id-ID'), acc: 'IDR' });
+            updateLayar();
+            alert(`✅ Permintaan penarikan IDR ${formatRibuan(amt)} sedang diproses oleh sistem.`);
+            closeFSModal('fs-withdraw-main');
+        }
+
+        function eksekusiOrder(tipe) {
+            let activeBal = activeAccountType === 'IDR' ? balanceIDR : balanceDemo;
+            if (activeBal < nominalSekarang) {
+                alert("Saldo tidak cukup! Silakan Deposit.");
+                if(activeAccountType === 'IDR') openModal('modal-pembayaran'); 
+                return;
+            }
+            if(activeAccountType === 'IDR') balanceIDR -= nominalSekarang;
+            else balanceDemo -= nominalSekarang;
+            
+            const posisiBaru = { 
+                id: Math.floor(Math.random() * 900000), 
+                acc: activeAccountType, 
+                pair: currentAssetName, 
+                type: tipe, 
+                invest: nominalSekarang, 
+                openPrice: targetPrice, 
+                openTime: new Date().toLocaleTimeString('id-ID') 
+            };
+            
+            posisiBaru.timeoutId = setTimeout(() => tutupPosisi(posisiBaru.id, false), 5000); 
+            
+            openPositions.push(posisiBaru);
+            renderIndikatorGrafikDOM();
+            updateLayar();
+            if(document.getElementById('tab-transaksi').classList.contains('active')) renderHistoryDanPortfolio();
+        }
+
+        function tutupPosisi(id, isManual) {
+            const index = openPositions.findIndex(p => p.id === id);
+            if (index > -1) {
+                const pos = openPositions[index];
+                clearTimeout(pos.timeoutId); 
+
+                let closeP = isManual ? displayPrice : targetPrice;
+                let isWin = false;
+                if(pos.type === 'BUY' && closeP > pos.openPrice) isWin = true;
+                if(pos.type === 'SELL' && closeP < pos.openPrice) isWin = true;
+
+                let profitDiterima = 0;
+                if(isWin) {
+                    let actualPayout = isManual ? (currentAssetPayout * 0.5) : currentAssetPayout; 
+                    profitDiterima = pos.invest + (pos.invest * (actualPayout / 100)); 
+                    if(pos.acc === 'IDR') balanceIDR += profitDiterima; else balanceDemo += profitDiterima;
+                } else {
+                    if(isManual) {
+                        let saved = pos.invest * 0.3;
+                        profitDiterima = saved;
+                        if(pos.acc === 'IDR') balanceIDR += saved; else balanceDemo += saved;
+                    }
+                }
+
+                closedPositions.unshift({ 
+                    acc: pos.acc, type: pos.type, pair: pos.pair, invest: pos.invest, 
+                    openPrice: pos.openPrice, closePrice: closeP, result: profitDiterima - pos.invest, 
+                    time: new Date().toLocaleTimeString('id-ID'),
+                    isManual: isManual
+                });
+                openPositions.splice(index, 1);
+                
+                renderIndikatorGrafikDOM();
+                updateLayar();
+                if(document.getElementById('tab-transaksi').classList.contains('active')) renderHistoryDanPortfolio();
+            }
+        }
+
+        function renderIndikatorGrafikDOM() {
+            const layer = document.getElementById('active-trades-layer');
+            layer.innerHTML = '';
+            
+            openPositions.forEach(pos => {
+                const isBuy = pos.type === 'BUY';
+                const colorClass = isBuy ? 'buy' : 'sell';
+                const label = isBuy ? 'Beli' : 'Jual';
+                const icon = isBuy ? '▲' : '▼';
+                const otColor = isBuy ? 'var(--ot-green)' : 'var(--ot-red)';
+                
+                layer.innerHTML += `
+                <div class="trade-marker" id="tm-${pos.id}">
+                    <div class="tm-line ${colorClass}"></div>
+                    <div class="tm-badge ${colorClass}">
+                        <span style="font-weight:bold; color: ${otColor}; font-size:12px;">${icon} ${label}</span>
+                        <span style="color:white; font-size:12px;">${formatUang(pos.invest, pos.acc==='DEMO')}</span>
+                        <button class="tm-close" onclick="tutupPosisi(${pos.id}, true)">Tutup</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function renderHistoryDanPortfolio() {
+            const posContainer = document.getElementById('position-list');
+            const histContainer = document.getElementById('history-list');
+            
+            if(openPositions.length === 0) posContainer.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding: 20px 0; font-size: 13px;">Tidak ada transaksi berjalan.</div>`;
+            else {
+                posContainer.innerHTML = '';
+                openPositions.forEach(pos => {
+                    const tColor = pos.type === 'BUY' ? 'var(--ot-green)' : 'var(--ot-red)';
+                    posContainer.innerHTML += `
+                    <div class="card">
+                        <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-weight: 700;">${pos.pair} <span style="font-size:10px; background:#444; padding:2px 4px; border-radius:4px;">${pos.acc}</span></div>
+                            <div style="color: ${tColor}; font-weight: 700;">${pos.type === 'BUY' ? 'Beli ↑' : 'Jual ↓'}</div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-gray); display:flex; justify-content: space-between; align-items:center;">
+                            <span>Invest: ${formatUang(pos.invest, pos.acc === 'DEMO')}</span>
+                            <button onclick="tutupPosisi(${pos.id}, true)" style="background:var(--bg-main); border:1px solid var(--border-dim); color:white; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">Tutup</button>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            if(closedPositions.length === 0) histContainer.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding: 20px 0; font-size: 13px;">Belum ada riwayat.</div>`;
+            else {
+                histContainer.innerHTML = '';
+                closedPositions.forEach(pos => {
+                    if(pos.type === 'DEPOSIT' || pos.type === 'WITHDRAW') {
+                        const isDepo = pos.type === 'DEPOSIT';
+                        const wColor = isDepo ? 'var(--ot-wallet)' : 'var(--text-white)';
+                        const sign = isDepo ? '+' : '';
+                        histContainer.innerHTML += `<div class="card" style="border-left: 3px solid ${wColor};"><div style="display:flex; justify-content: space-between; font-weight: 700;"><span>${isDepo ? 'Deposit' : 'Tarik Dana'} <span style="font-size:10px; font-weight:normal; color:#888;">via ${pos.method}</span></span><span style="color: ${wColor};">${sign}${formatUang(Math.abs(pos.profit), false)}</span></div><div style="font-size: 11px; color: var(--text-gray); margin-top: 5px;">${pos.time}</div></div>`;
+                    } else {
+                        const isWin = pos.result > 0;
+                        const rColor = isWin ? 'var(--ot-green)' : 'var(--ot-red)';
+                        const lblManual = pos.isManual ? `<span style="font-size:9px; background:var(--bg-main); padding:2px 4px; border-radius:4px; margin-left:4px;">Manual</span>` : '';
+                        
+                        histContainer.innerHTML += `<div class="card"><div style="display:flex; justify-content: space-between; margin-bottom: 8px; font-weight: 700;"><span>${pos.pair} <span style="font-size:11px; color:var(--text-gray); font-weight:400; margin-left:6px;">${pos.type}</span>${lblManual}</span><span style="color: ${rColor};">${isWin ? '+' : ''}${formatUang(pos.result, pos.acc === 'DEMO')}</span></div><div style="font-size: 12px; color: var(--text-gray); display:flex; justify-content: space-between;"><span>Invest: ${formatUang(pos.invest, pos.acc === 'DEMO')}</span><span>${pos.time}</span></div></div>`;
+                    }
+                });
+            }
+        }
+
+        function updateLayar() {
+            document.getElementById('modal-idr-bal').innerText = formatUang(balanceIDR, false).replace("Rp", "IDR ");
+            document.getElementById('modal-demo-bal').innerText = formatUang(balanceDemo, true);
+
+            const headBal = document.getElementById('header-balance');
+            const headType = document.getElementById('header-type');
+            
+            if(activeAccountType === 'IDR') {
+                headBal.innerText = formatUang(balanceIDR, false).replace("Rp", "IDR ");
+                headType.innerHTML = `IDR Akun Anda <i class="ri-arrow-down-s-line"></i>`;
+            } else {
+                headBal.innerText = formatUang(balanceDemo, true);
+                headType.innerHTML = `Akun demo <i class="ri-arrow-down-s-line"></i>`;
+            }
+        }
+
+        window.onload = () => {
+            initCanvas();
+            updateLayar();
+            document.getElementById('input-waktu-flex').value = opsiWaktuFlex[indeksWaktuFlex];
+        };
+        
+        window.addEventListener('resize', () => {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.scale(dpr, dpr);
+        });
+
+    </script>
+</body>
+</html>
