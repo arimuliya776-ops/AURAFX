@@ -25,14 +25,26 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #000; display: flex; justify-content: center; height: 100vh; overflow: hidden; color: var(--text-white); }
+        
+        /* FIX UNTUK NAVBAR TERTUTUP (DYNAMIC VIEWPORT) */
+        html, body {
+            height: 100%;
+            height: 100dvh; /* Ini memastikan tinggi akurat di browser mobile */
+            background-color: #000;
+            color: var(--text-white);
+            overflow: hidden;
+        }
+        
+        body { display: flex; justify-content: center; }
+        
         .app-container { width: 100%; max-width: 480px; height: 100%; background-color: var(--bg-main); display: flex; flex-direction: column; position: relative; overflow: hidden;}
 
         /* ========================================================
            WELCOME / LOGIN SCREEN OVERLAY
            ======================================================== */
         .welcome-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; 
+            height: 100%; height: 100dvh; /* Dynamic Viewport Fix */
             background-color: #000000; z-index: 9999;
             display: flex; flex-direction: column; justify-content: space-between;
             transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
@@ -333,14 +345,14 @@
                 </div>
                 <div class="action-row">
                     <button class="btn-trade btn-jual" onclick="eksekusiOrder('SELL')">
-                        <span style="font-size: 18px;">Jual</span>
+                        <span style="font-size: 18px;">SELL</span>
                         <i class="ri-arrow-down-line" style="font-size:22px;"></i>
                     </button>
                     <button class="btn-clock">
                         <i class="ri-time-line"></i>
                     </button>
                     <button class="btn-trade btn-beli" onclick="eksekusiOrder('BUY')">
-                        <span style="font-size: 18px;">Beli</span>
+                        <span style="font-size: 18px;">BUY</span>
                         <i class="ri-arrow-up-line" style="font-size:22px;"></i>
                     </button>
                 </div>
@@ -603,16 +615,16 @@
             </div>
             <div class="fs-body" style="padding: 0;">
                 <div class="prof-header-wrap">
-                    <div class="prof-avatar">A</div>
+                    <div class="prof-avatar">TP</div>
                     <div>
-                        <div class="prof-name">Ari Mulya Rizki</div>
-                        <div class="prof-id">ID 2931759472</div>
+                        <div class="prof-name">TAHAP PENGEMBANGAN</div>
+                        <div class="prof-id">Credit By Ari Mulya Rizki</div>
                     </div>
                 </div>
                 <div class="prof-status-card">
                     <div class="prof-status-left">
                         <div class="prof-status-icon"><i class="ri-vip-crown-fill"></i></div>
-                        <span>Starter</span>
+                        <span>DALAM TAHAP PENGEMBANGAN</span>
                     </div>
                     <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 24px;"></i>
                 </div>
@@ -649,7 +661,7 @@
                 <span>Deposit</span>
                 <i class="ri-close-line" onclick="closeFSModal('fs-deposit-main')"></i>
             </div>
-            <div class="deposit-acc-info">IDR Akun Anda No.2931759472</div>
+            <div class="deposit-acc-info">IDR Akun Anda Credit By Ari Mulya Rizki (TAHAP PENGEMBANGAN)</div>
             <div class="fs-body" style="padding-top: 0;">
                 <div class="depo-group" onclick="openFSModal('fs-payment-methods')">
                     <div class="depo-group-left">
@@ -665,7 +677,7 @@
                     <div class="depo-group-left">
                         <div class="depo-text">
                             <span class="depo-label">Nominal</span>
-                            <span class="depo-val" id="lbl-pay-amount">IDR 450.000</span>
+                            <span class="depo-val" id="lbl-pay-amount">Minimal IDR 150.000</span>
                         </div>
                     </div>
                     <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 20px;"></i>
@@ -678,7 +690,7 @@
                 <button class="btn-fs-green" onclick="submitRealDeposit()">Selanjutnya</button>
                 <div class="ssl-info">
                     <i class="ri-lock-2-line"></i>
-                    Data Anda dienkripsi menggunakan sertifikat SSL 256-bit yang menawarkan tingkat keamanan tertinggi.
+                    Fitur Deposit Masih Dalam Tahap Pengembangan,Silahkan Top Up Saldo Sesuka Hati. Saldo Akan Masuk Secara Otomatis ke Akun Anda
                 </div>
             </div>
         </div>
@@ -740,10 +752,8 @@
     <script>
         // --- FUNGSI MASUK DARI HALAMAN WELCOME ---
         function masukAplikasi() {
-            // Sembunyikan layar welcome dengan menambahkan kelas 'hidden'
             document.getElementById('welcome-screen').classList.add('hidden');
             
-            // Trigger event resize setelah animasi selesai (400ms) agar canvas chart dimuat dengan ukuran sempurna
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
             }, 400);
