@@ -29,7 +29,7 @@
         /* FIX UNTUK NAVBAR TERTUTUP (DYNAMIC VIEWPORT) */
         html, body {
             height: 100%;
-            height: 100dvh; /* Ini memastikan tinggi akurat di browser mobile */
+            height: 100dvh; 
             background-color: #000;
             color: var(--text-white);
             overflow: hidden;
@@ -44,7 +44,7 @@
            ======================================================== */
         .welcome-container {
             position: fixed; top: 0; left: 0; width: 100%; 
-            height: 100%; height: 100dvh; /* Dynamic Viewport Fix */
+            height: 100%; height: 100dvh; 
             background-color: #000000; z-index: 9999;
             display: flex; flex-direction: column; justify-content: space-between;
             transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
@@ -750,16 +750,27 @@
     </div>
 
     <script>
+        // --- 1. MENGATUR UKURAN LAYAR DENGAN BENAR ---
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return; // Mencegah bug canvas 0 pixel
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.scale(dpr, dpr);
+        }
+
         // --- FUNGSI MASUK DARI HALAMAN WELCOME ---
         function masukAplikasi() {
             document.getElementById('welcome-screen').classList.add('hidden');
-            
             setTimeout(() => {
+                resizeCanvas(); // Pastikan ukuran grafik pas saat halaman utama terbuka
                 window.dispatchEvent(new Event('resize'));
             }, 400);
         }
 
-        // --- 1. STATE & VARIABEL UTAMA ---
+        // --- 2. STATE & VARIABEL UTAMA ---
         let balanceIDR = 0; 
         let balanceDemo = 10000;
         let activeAccountType = 'IDR'; 
@@ -779,6 +790,7 @@
         let currentAssetName = "Bitcoin";
         let currentAssetPayout = 85;
         let liveWebSocket = null;
+        let isFirstTick = true;
 
         // Data & State Waktu Flex
         const opsiWaktuFlex = [
@@ -788,9 +800,9 @@
             "1 j", "2 j", "3 j", "4 j", "5 j", "6 j", "7 j", "8 j", "9 j", "10 j", "11 j", "12 j", 
             "13 j", "14 j", "15 j", "16 j", "17 j", "18 j", "19 j", "20 j", "21 j", "22 j", "23 j"
         ];
-        let indeksWaktuFlex = 13; // Default ke "10 mnt" (index ke-13)
+        let indeksWaktuFlex = 13; // Default ke "10 mnt"
 
-        // --- 2. CANVAS ENGINE ---
+        // --- 3. CANVAS ENGINE ---
         const canvas = document.getElementById('chartCanvas');
         const ctx = canvas.getContext('2d');
         
@@ -812,12 +824,7 @@
         let initialPinchDist = null;
 
         function initCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-
+            resizeCanvas();
             canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
             canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
             canvas.addEventListener('touchend', handleTouchEnd);
@@ -1055,8 +1062,16 @@
             });
         }
 
-        // --- 3. MARKET LOGIC (100% REAL-TIME BINANCE WEBSOCKET + REST API INSTANT LOAD) ---
+        // --- 4. SISTEM HYBRID: API ASLI + SIMULATOR LOKAL (ANTI BLOKIR ISP) ---
         let timerInterval;
+        let simulationInterval;
+        
+        // Harga cadangan jika API diblokir oleh Telkomsel/Indihome dkk
+        const hargaDasarFallback = {
+            'BTCUSDT': 68500, 'ETHUSDT': 3450, 'SOLUSDT': 185,
+            'BNBUSDT': 590, 'XRPUSDT': 0.62, 'ADAUSDT': 0.45,
+            'DOGEUSDT': 0.15, 'PAXGUSDT': 2350
+        };
 
         function pilihAset(symbol, name, colorStr, payout, iconChar) {
             currentAssetName = name;
@@ -1073,39 +1088,63 @@
 
             if(liveWebSocket) { liveWebSocket.close(); liveWebSocket = null; }
             if(timerInterval) clearInterval(timerInterval);
+            if(simulationInterval) clearInterval(simulationInterval);
             
             chartData = [];
-            let isFirstTick = true; // Dipindahkan ke sini agar bisa diakses Fetch & WS
+            isFirstTick = true;
 
-            // 1. INSTANT LOAD: Ambil harga detik ini juga via API agar chart langsung tergambar
+            // HYBRID: Pasang timer 3 detik. Jika API diblokir, luncurkan Simulator Lokal
+            let fallbackP = hargaDasarFallback[symbol] || 100;
+            let timeoutAPI = setTimeout(() => {
+                if (isFirstTick) {
+                    console.log("Koneksi API diblokir ISP. Mengaktifkan Mode Simulasi Lokal...");
+                    jalankanSimulasiLokal(fallbackP);
+                }
+            }, 3000);
+
+            // Coba ambil data dari API asli
             fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol.toUpperCase()}`)
                 .then(res => res.json())
                 .then(data => {
                     if (isFirstTick && data.price) {
+                        clearTimeout(timeoutAPI);
                         let price = parseFloat(data.price);
-                        displayPrice = price;
-                        targetPrice = price;
-                        buatDataAwal(price);
-                        jalankanTimerCandle();
-                        isFirstTick = false;
+                        mulaiGrafik(price);
                     }
-                }).catch(err => console.log("Gagal memuat harga awal", err));
+                }).catch(err => console.log("API Fetch Error/Terblokir", err));
 
-            // 2. WEBSOCKET: Gunakan @ticker (bukan @trade) agar selalu update per detik
             liveWebSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@ticker`);
-
             liveWebSocket.onmessage = (event) => {
                 let data = JSON.parse(event.data);
-                let price = parseFloat(data.c); // Gunakan data.c (current close price) dari payload @ticker
+                let price = parseFloat(data.c); 
                 targetPrice = price;
 
                 if (isFirstTick) {
-                    displayPrice = price;
-                    buatDataAwal(price);
-                    jalankanTimerCandle();
-                    isFirstTick = false;
+                    clearTimeout(timeoutAPI);
+                    mulaiGrafik(price);
                 }
             };
+            liveWebSocket.onerror = (err) => console.log("Websocket Terblokir oleh ISP");
+        }
+
+        // Fungsi dasar untuk memulai rendering chart (dipakai oleh API asli maupun Simulator)
+        function mulaiGrafik(price) {
+            displayPrice = price;
+            targetPrice = price;
+            buatDataAwal(price);
+            jalankanTimerCandle();
+            isFirstTick = false;
+        }
+
+        // ENGINE SIMULATOR LOKAL: Menciptakan pergerakan grafik otomatis jika tidak ada internet
+        function jalankanSimulasiLokal(basePrice) {
+            mulaiGrafik(basePrice);
+            
+            simulationInterval = setInterval(() => {
+                let volatility = targetPrice * 0.00015; // Kecepatan gerak harga buatan
+                let change = (Math.random() - 0.5) * volatility;
+                targetPrice += change; // Paksa harga berubah tiap 1 detik
+            }, 1000);
         }
 
         function buatDataAwal(currentP) {
@@ -1114,7 +1153,7 @@
             let history = [];
             for(let i=0; i<150; i++) {
                 let open = p;
-                let volatility = currentP * 0.0005;
+                let volatility = currentP * 0.0003;
                 let close = open + (Math.random() - 0.5) * volatility;
                 let high = Math.max(open, close) + Math.random() * (volatility * 0.5);
                 let low = Math.min(open, close) - Math.random() * (volatility * 0.5);
@@ -1422,12 +1461,7 @@
         };
         
         window.addEventListener('resize', () => {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.setTransform(1, 0, 0, 1, 0, 0); 
-            ctx.scale(dpr, dpr);
+            resizeCanvas(); // Diperbaiki agar saat rotasi layar atau pindah tab, grafik selalu full menyesuaikan
         });
 
     </script>
