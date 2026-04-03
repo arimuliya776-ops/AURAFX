@@ -345,14 +345,14 @@
                 </div>
                 <div class="action-row">
                     <button class="btn-trade btn-jual" onclick="eksekusiOrder('SELL')">
-                        <span style="font-size: 18px;">SELL</span>
+                        <span style="font-size: 18px;">Jual</span>
                         <i class="ri-arrow-down-line" style="font-size:22px;"></i>
                     </button>
                     <button class="btn-clock">
                         <i class="ri-time-line"></i>
                     </button>
                     <button class="btn-trade btn-beli" onclick="eksekusiOrder('BUY')">
-                        <span style="font-size: 18px;">BUY</span>
+                        <span style="font-size: 18px;">Beli</span>
                         <i class="ri-arrow-up-line" style="font-size:22px;"></i>
                     </button>
                 </div>
@@ -615,16 +615,16 @@
             </div>
             <div class="fs-body" style="padding: 0;">
                 <div class="prof-header-wrap">
-                    <div class="prof-avatar">TP</div>
+                    <div class="prof-avatar">A</div>
                     <div>
-                        <div class="prof-name">TAHAP PENGEMBANGAN</div>
-                        <div class="prof-id">Credit By Ari Mulya Rizki</div>
+                        <div class="prof-name">Ari Mulya Rizki</div>
+                        <div class="prof-id">ID 2931759472</div>
                     </div>
                 </div>
                 <div class="prof-status-card">
                     <div class="prof-status-left">
                         <div class="prof-status-icon"><i class="ri-vip-crown-fill"></i></div>
-                        <span>DALAM TAHAP PENGEMBANGAN</span>
+                        <span>Starter</span>
                     </div>
                     <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 24px;"></i>
                 </div>
@@ -661,7 +661,7 @@
                 <span>Deposit</span>
                 <i class="ri-close-line" onclick="closeFSModal('fs-deposit-main')"></i>
             </div>
-            <div class="deposit-acc-info">IDR Akun Anda Credit By Ari Mulya Rizki (TAHAP PENGEMBANGAN)</div>
+            <div class="deposit-acc-info">IDR Akun Anda No.2931759472</div>
             <div class="fs-body" style="padding-top: 0;">
                 <div class="depo-group" onclick="openFSModal('fs-payment-methods')">
                     <div class="depo-group-left">
@@ -677,7 +677,7 @@
                     <div class="depo-group-left">
                         <div class="depo-text">
                             <span class="depo-label">Nominal</span>
-                            <span class="depo-val" id="lbl-pay-amount">Minimal IDR 150.000</span>
+                            <span class="depo-val" id="lbl-pay-amount">IDR 450.000</span>
                         </div>
                     </div>
                     <i class="ri-arrow-right-s-line" style="color: var(--text-gray); font-size: 20px;"></i>
@@ -690,7 +690,7 @@
                 <button class="btn-fs-green" onclick="submitRealDeposit()">Selanjutnya</button>
                 <div class="ssl-info">
                     <i class="ri-lock-2-line"></i>
-                    Fitur Deposit Masih Dalam Tahap Pengembangan,Silahkan Top Up Saldo Sesuka Hati. Saldo Akan Masuk Secara Otomatis ke Akun Anda
+                    Data Anda dienkripsi menggunakan sertifikat SSL 256-bit yang menawarkan tingkat keamanan tertinggi.
                 </div>
             </div>
         </div>
@@ -1055,7 +1055,7 @@
             });
         }
 
-        // --- 3. MARKET LOGIC (100% REAL-TIME BINANCE WEBSOCKET) ---
+        // --- 3. MARKET LOGIC (100% REAL-TIME BINANCE WEBSOCKET + REST API INSTANT LOAD) ---
         let timerInterval;
 
         function pilihAset(symbol, name, colorStr, payout, iconChar) {
@@ -1075,19 +1075,34 @@
             if(timerInterval) clearInterval(timerInterval);
             
             chartData = [];
+            let isFirstTick = true; // Dipindahkan ke sini agar bisa diakses Fetch & WS
 
-            liveWebSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@trade`);
-            
-            let isFirstTick = true;
+            // 1. INSTANT LOAD: Ambil harga detik ini juga via API agar chart langsung tergambar
+            fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol.toUpperCase()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (isFirstTick && data.price) {
+                        let price = parseFloat(data.price);
+                        displayPrice = price;
+                        targetPrice = price;
+                        buatDataAwal(price);
+                        jalankanTimerCandle();
+                        isFirstTick = false;
+                    }
+                }).catch(err => console.log("Gagal memuat harga awal", err));
+
+            // 2. WEBSOCKET: Gunakan @ticker (bukan @trade) agar selalu update per detik
+            liveWebSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@ticker`);
+
             liveWebSocket.onmessage = (event) => {
                 let data = JSON.parse(event.data);
-                let price = parseFloat(data.p);
+                let price = parseFloat(data.c); // Gunakan data.c (current close price) dari payload @ticker
                 targetPrice = price;
 
                 if (isFirstTick) {
                     displayPrice = price;
                     buatDataAwal(price);
-                    jalankanTimerCandle(); 
+                    jalankanTimerCandle();
                     isFirstTick = false;
                 }
             };
